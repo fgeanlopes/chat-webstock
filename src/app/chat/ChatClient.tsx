@@ -19,7 +19,7 @@ type ServerEvent =
 export default function ChatClient() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isConnected, setIsConnected] = useState(false);
-  const [username, setUsername] = useState("Convidado");
+  const [username, setUsername] = useState<string | null>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -83,7 +83,7 @@ export default function ChatClient() {
     const trimmed = text.trim();
     if (!trimmed) return;
 
-    const sender = username || "Convidado";
+    const sender = username ?? "Convidado";
 
     const optimisticMessage: ChatMessage = {
       id: crypto.randomUUID(),
@@ -119,7 +119,9 @@ export default function ChatClient() {
       <header className="flex items-center justify-between border-b border-white/10 px-6 py-5">
         <div>
           <h1 className="text-2xl font-semibold">Chat em tempo real</h1>
-          <p className="text-sm text-slate-300">Você está conectado como {username}</p>
+          <p className="text-sm text-slate-300" suppressHydrationWarning>
+            Você está conectado como {username ?? "Carregando..."}
+          </p>
         </div>
         <div className={`h-2 w-2 rounded-full ${isConnected ? "bg-emerald-400" : "bg-red-500"}`} />
       </header>
