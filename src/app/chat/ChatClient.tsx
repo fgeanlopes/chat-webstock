@@ -19,6 +19,7 @@ type ServerEvent =
 export default function ChatClient() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isConnected, setIsConnected] = useState(false);
+  const [reconnectToken, setReconnectToken] = useState(0);
   const [username, setUsername] = useState<string | null>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
@@ -38,10 +39,27 @@ export default function ChatClient() {
   }, []);
 
   useEffect(() => {
+    let isActive = true;
+    let scheduledReconnect = false;
+
+    const scheduleReconnect = () => {
+      if (!isActive || scheduledReconnect) {
+        return;
+      }
+      scheduledReconnect = true;
+      setReconnectToken((token) => token + 1);
+    };
+
     const { socket, cleanup, disconnect } = connectToChatSocket({
       onOpen: () => setIsConnected(true),
-      onClose: () => setIsConnected(false),
-      onError: () => setIsConnected(false),
+      onClose: () => {
+        setIsConnected(false);
+        scheduleReconnect();
+      },
+      onError: () => {
+        setIsConnected(false);
+        scheduleReconnect();
+      },
       onMessage: (event) => {
         try {
           const data = JSON.parse(event.data) as ServerEvent;
@@ -68,10 +86,11 @@ export default function ChatClient() {
     }
 
     return () => {
+      isActive = false;
       cleanup();
       disconnect();
     };
-  }, []);
+  }, [reconnectToken]);
 
   useEffect(() => {
     const el = scrollContainerRef.current;
